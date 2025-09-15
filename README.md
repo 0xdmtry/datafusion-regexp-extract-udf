@@ -1,5 +1,9 @@
 ### Commands
 
+#### Check
+```bash
+cargo check
+```
 #### Run
 ```bash
  cargo run --example ping
