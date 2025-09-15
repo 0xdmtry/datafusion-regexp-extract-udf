@@ -1,4 +1,8 @@
-//! datafusion-regexp-extract-udf — temp smoke check
+//! datafusion-regexp-extract-udf
+
+pub mod udf;
+pub use udf::*;
+
 
 /// Returns a ping message; used by the smoke test
 pub fn ping() -> &'static str {
