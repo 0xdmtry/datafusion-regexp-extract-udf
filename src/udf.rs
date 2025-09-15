@@ -60,7 +60,7 @@ impl ScalarUDFImpl for RegexpExtractUdf {
     }
 
     fn return_type(&self, arg_types: &[DataType]) -> Result<DataType> {
-        match arg_types.get(0) {
+        match arg_types.first() {
             Some(DataType::Utf8) => Ok(DataType::Utf8),
             Some(DataType::LargeUtf8) => Ok(DataType::LargeUtf8),
             other => Err(DataFusionError::Plan(format!(
