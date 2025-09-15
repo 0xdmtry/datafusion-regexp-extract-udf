@@ -11,6 +11,9 @@ readme = "README.md"
 keywords = ["datafusion", "arrow", "udf", "regex", "spark"]
 categories = ["database-implementations", "data-structures"]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lib]
 name = "datafusion_regexp_extract_udf"
 path = "src/lib.rs"
