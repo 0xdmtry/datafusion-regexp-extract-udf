@@ -26,3 +26,5 @@ regex = "1.11.2"
 [dev-dependencies]
 datafusion = { version = "49.0.2", default-features = false }
 criterion = { version = "0.7.0", default-features = false }
+tokio = { version = "1.47.1", features = ["rt-multi-thread", "macros"] }
+

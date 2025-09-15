@@ -58,7 +58,7 @@ pub fn null_string_of_width(dt: &DataType) -> ScalarValue {
     }
 }
 
-pub fn string_builder_for(dt: &DataType, len: usize) -> Result<ArrayRef> {
+pub fn string_builder_for(_dt: &DataType, _len: usize) -> Result<ArrayRef> {
     Err(DataFusionError::Internal(
         "string_builder_for not used directly".into(),
     ))
