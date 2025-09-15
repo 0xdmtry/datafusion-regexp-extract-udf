@@ -7,6 +7,8 @@ use datafusion::logical_expr::{
     Volatility,
 };
 
+use std::any::Any;
+
 /// Public factory: returns the logical UDF handle users will call from the Expr/DataFrame API
 pub fn regexp_extract_udf() -> ScalarUDF {
     ScalarUDF::from(RegexpExtractUdf::new())
@@ -36,7 +38,7 @@ impl RegexpExtractUdf {
             combos
                 .into_iter()
                 .map(|(a, b, c)| TypeSignature::Exact(vec![a, b, c]))
-                .collect::<Vec<_>>(),
+                .collect(),
             Volatility::Immutable,
         );
 
@@ -45,7 +47,7 @@ impl RegexpExtractUdf {
 }
 
 impl ScalarUDFImpl for RegexpExtractUdf {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 
@@ -67,11 +69,8 @@ impl ScalarUDFImpl for RegexpExtractUdf {
         }
     }
 
-    /// Placeholder: physical evaluation is not wired yet
-    fn invoke_with_args(&self, _args: ScalarFunctionArgs) -> Result<ColumnarValue> {
-        Err(DataFusionError::NotImplemented(
-            "regexp_extract kernel not implemented yet (coming in Phase 3)".to_string(),
-        ))
+    fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
+        crate::eval::evaluate_regexp_extract(args)
     }
 }
 
