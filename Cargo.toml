@@ -2,5 +2,27 @@
 name = "datafusion-regexp-extract-udf"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
+license = "Apache-2.0"
+description = "Spark-compatible regexp_extract implemented as an external UDF for DataFusion (Expr/DataFrame API; no SQL)."
+repository = "https://github.com/0xdmtry/datafusion-regexp-extract-udf"
+homepage = "https://github.com/0xdmtry/datafusion-regexp-extract-udf"
+readme = "README.md"
+keywords = ["datafusion", "arrow", "udf", "regex", "spark"]
+categories = ["database-implementations", "data-structures"]
+
+[lib]
+name = "datafusion_regexp_extract_udf"
+path = "src/lib.rs"
+
+[features]
+default = []
+bench = []
 
 [dependencies]
+datafusion = { version = "49.0.2", default-features = false }
+regex = "1.11.2"
+
+[dev-dependencies]
+datafusion = { version = "49.0.2", default-features = false }
+criterion = { version = "0.7.0", default-features = false }
