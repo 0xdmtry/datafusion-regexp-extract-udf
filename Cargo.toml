@@ -26,6 +26,7 @@ bench = []
 datafusion = { version = "49.0.2", default-features = false }
 lru = "0.16.1"
 regex = "1.11.2"
+thiserror = "2.0.16"
 
 [dev-dependencies]
 datafusion = { version = "49.0.2", default-features = false }

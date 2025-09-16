@@ -1,10 +1,10 @@
+use crate::error::RegexpExtractError;
 use crate::pattern_cache::PatternCache;
 use datafusion::arrow::array::{
     Array, ArrayRef, Int32Array, Int64Array, LargeStringArray, LargeStringBuilder, StringArray,
     StringBuilder,
 };
 use datafusion::arrow::datatypes::DataType;
-use datafusion::common::{DataFusionError, Result};
 use regex::Regex;
 use std::sync::Arc;
 
@@ -95,7 +95,7 @@ fn run_generic<S, P>(
     patterns: &P,
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
-) -> Result<ArrayRef>
+) -> Result<ArrayRef, RegexpExtractError>
 where
     S: StrArray,
     P: StrArray,
@@ -143,30 +143,20 @@ where
             }
             i32s.value(i) as i64
         } else {
-            return Err(DataFusionError::Execution(
-                "idx array missing (internal)".into(),
-            ));
+            return Err(RegexpExtractError::MissingIdxArray);
         };
 
         if idx < 0 {
-            return Err(DataFusionError::Execution(format!(
-                "regexp_extract: idx must be >= 0, got {idx}"
-            )));
+            return Err(RegexpExtractError::NegativeIndex(idx));
         }
 
         let re = if pat_scalar {
             if compiled_scalar.is_none() {
-                compiled_scalar = Some(Regex::new(patterns.value(0)).map_err(|e| {
-                    DataFusionError::Execution(format!(
-                        "regexp_extract: invalid regex pattern: {e}"
-                    ))
-                })?);
+                compiled_scalar = Some(Regex::new(patterns.value(0))?);
             }
             compiled_scalar.as_ref().unwrap()
         } else {
-            cache.get_or_compile(patterns.value(i)).map_err(|e| {
-                DataFusionError::Execution(format!("regexp_extract: invalid regex pattern: {e}"))
-            })?
+            cache.get_or_compile(patterns.value(i))?
         };
 
         let out: &str = if let Some(caps) = re.captures(s) {
@@ -195,7 +185,7 @@ pub fn run_utf8_utf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
-) -> Result<ArrayRef> {
+) -> Result<ArrayRef, RegexpExtractError> {
     run_generic(strings, patterns, idx_i64, idx_i32)
 }
 
@@ -206,7 +196,7 @@ pub fn run_large_utf8_utf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
-) -> Result<ArrayRef> {
+) -> Result<ArrayRef, RegexpExtractError> {
     run_generic(strings, patterns, idx_i64, idx_i32)
 }
 
@@ -217,7 +207,7 @@ pub fn run_utf8_largeutf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
-) -> Result<ArrayRef> {
+) -> Result<ArrayRef, RegexpExtractError> {
     run_generic(strings, patterns, idx_i64, idx_i32)
 }
 
@@ -228,6 +218,6 @@ pub fn run_large_utf8_largeutf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
-) -> Result<ArrayRef> {
+) -> Result<ArrayRef, RegexpExtractError> {
     run_generic(strings, patterns, idx_i64, idx_i32)
 }

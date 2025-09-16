@@ -1,3 +1,4 @@
+use crate::error::RegexpExtractError;
 use lru::LruCache;
 use regex::Regex;
 use std::num::NonZeroUsize;
@@ -15,7 +16,7 @@ impl PatternCache {
         }
     }
 
-    pub fn get_or_compile(&mut self, pat: &str) -> Result<&Regex, regex::Error> {
+    pub fn get_or_compile(&mut self, pat: &str) -> Result<&Regex, RegexpExtractError> {
         if self.lru.contains(pat) {
             return Ok(self.lru.get(pat).unwrap());
         }

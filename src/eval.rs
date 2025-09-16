@@ -66,22 +66,26 @@ pub fn evaluate_regexp_extract(args: ScalarFunctionArgs) -> Result<ColumnarValue
         (DataType::Utf8, DataType::Utf8) => {
             let s = s_arr.as_any().downcast_ref::<StringArray>().unwrap();
             let p = pat_utf8.unwrap();
-            run_utf8_utf8(s, p, idx_i64, idx_i32, &out_dt)?
+            run_utf8_utf8(s, p, idx_i64, idx_i32, &out_dt)
+                .map_err(|e| DataFusionError::Execution(e.to_string()))?
         }
         (DataType::LargeUtf8, DataType::Utf8) => {
             let s = s_arr.as_any().downcast_ref::<LargeStringArray>().unwrap();
             let p = pat_utf8.unwrap();
-            run_large_utf8_utf8(s, p, idx_i64, idx_i32, &out_dt)?
+            run_large_utf8_utf8(s, p, idx_i64, idx_i32, &out_dt)
+                .map_err(|e| DataFusionError::Execution(e.to_string()))?
         }
         (DataType::Utf8, DataType::LargeUtf8) => {
             let s = s_arr.as_any().downcast_ref::<StringArray>().unwrap();
             let p = pat_lutf8.unwrap();
-            run_utf8_largeutf8(s, p, idx_i64, idx_i32, &out_dt)?
+            run_utf8_largeutf8(s, p, idx_i64, idx_i32, &out_dt)
+                .map_err(|e| DataFusionError::Execution(e.to_string()))?
         }
         (DataType::LargeUtf8, DataType::LargeUtf8) => {
             let s = s_arr.as_any().downcast_ref::<LargeStringArray>().unwrap();
             let p = pat_lutf8.unwrap();
-            run_large_utf8_largeutf8(s, p, idx_i64, idx_i32, &out_dt)?
+            run_large_utf8_largeutf8(s, p, idx_i64, idx_i32, &out_dt)
+                .map_err(|e| DataFusionError::Execution(e.to_string()))?
         }
         (other_s, _) => {
             return Err(DataFusionError::Execution(format!(
