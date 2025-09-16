@@ -36,3 +36,7 @@
 **Performance notes**
 - Compiles a scalar `pattern` once per batch.
 - For `pattern` as a column, uses a small per-batch cache to avoid repeated compilations.
+
+**Errors**
+
+Errors are represented internally via a structured `RegexpExtractError` enum (e.g., `InvalidPattern`, `NegativeIndex`) and are mapped to `DataFusionError::Execution` at the UDF boundary.
