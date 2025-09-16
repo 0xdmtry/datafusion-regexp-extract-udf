@@ -9,8 +9,8 @@ pub mod pattern_cache;
 pub mod types;
 pub mod udf;
 
-pub use config::RegexpExtractConfig;
-pub use udf::regexp_extract_udf; // will re-export `regexp_extract_udf()` later
+pub use config::{InvalidPatternMode, RegexpExtractConfig};
+pub use udf::{regexp_extract_udf, regexp_extract_udf_with};
 
 /// Returns a ping message; used by the smoke test
 pub fn ping() -> &'static str {

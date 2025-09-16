@@ -3,9 +3,9 @@ use std::sync::Arc;
 use criterion::{Criterion, criterion_group, criterion_main};
 use datafusion::arrow::array::{ArrayRef, Int32Array, LargeStringArray, StringArray};
 use datafusion::arrow::datatypes::DataType;
-use std::hint::black_box;
-
+use datafusion_regexp_extract_udf::InvalidPatternMode;
 use datafusion_regexp_extract_udf::kernel::{run_large_utf8_utf8, run_utf8_utf8};
+use std::hint::black_box;
 
 fn bench_utf8_scalar_pattern(c: &mut Criterion) {
     let n = 20_000;
@@ -26,6 +26,7 @@ fn bench_utf8_scalar_pattern(c: &mut Criterion) {
                 Some(&idx_scalar),
                 &DataType::Utf8,
                 64,
+                InvalidPatternMode::Error,
             )
             .unwrap();
             black_box(out);
@@ -52,6 +53,7 @@ fn bench_utf8_column_pattern_repeated(c: &mut Criterion) {
                 Some(&idx_scalar),
                 &DataType::Utf8,
                 64,
+                InvalidPatternMode::Error,
             )
             .unwrap();
             black_box(out);
@@ -78,6 +80,7 @@ fn bench_largeutf8_scalar_pattern(c: &mut Criterion) {
                 Some(&idx_scalar),
                 &DataType::LargeUtf8,
                 64,
+                InvalidPatternMode::Error,
             )
             .unwrap();
             black_box(out);
@@ -101,6 +104,7 @@ fn bench_utf8_unique_patterns_miss(c: &mut Criterion) {
                 Some(&idx),
                 &DataType::Utf8,
                 64,
+                InvalidPatternMode::Error,
             )
             .unwrap();
             black_box(out);
@@ -136,6 +140,7 @@ fn bench_utf8_long_strings(c: &mut Criterion) {
                     Some(&idx),
                     &DataType::Utf8,
                     64,
+                    InvalidPatternMode::Error,
                 )
                 .unwrap();
                 black_box(out);
@@ -159,6 +164,7 @@ fn bench_utf8_no_match(c: &mut Criterion) {
                 Some(&idx),
                 &DataType::Utf8,
                 64,
+                InvalidPatternMode::Error,
             )
             .unwrap();
             black_box(out);
@@ -182,6 +188,7 @@ fn bench_utf8_heavy_alternation(c: &mut Criterion) {
                 Some(&idx),
                 &DataType::Utf8,
                 64,
+                InvalidPatternMode::Error,
             )
             .unwrap();
             black_box(out);

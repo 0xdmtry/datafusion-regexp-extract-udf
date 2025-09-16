@@ -7,7 +7,9 @@ use datafusion::datasource::MemTable;
 use datafusion::prelude::{SessionContext, col, lit};
 use datafusion::scalar::ScalarValue;
 
-use datafusion_regexp_extract_udf::regexp_extract_udf;
+use datafusion_regexp_extract_udf::{regexp_extract_udf, regexp_extract_udf_with};
+
+use datafusion_regexp_extract_udf::{InvalidPatternMode, RegexpExtractConfig};
 
 fn make_memtable(
     s: ArrayRef,
@@ -308,4 +310,44 @@ async fn invalid_regex_errors() {
         .expect_err("should error on invalid pattern");
     let msg = format!("{err:?}");
     assert!(msg.contains("invalid regex pattern"));
+}
+
+#[tokio::test]
+async fn invalid_pattern_lenient_returns_empty_string() {
+    let mut cfg = RegexpExtractConfig::new();
+    cfg.invalid_pattern_mode = InvalidPatternMode::EmptyString;
+
+    let ctx = SessionContext::new();
+    ctx.register_udf(regexp_extract_udf_with(cfg));
+
+    let s = StringArray::from(vec![Some("ab")]);
+    let s = Arc::new(s) as ArrayRef;
+
+    let schema = Arc::new(Schema::new(vec![Field::new("s", DataType::Utf8, true)]));
+    let batch = RecordBatch::try_new(schema.clone(), vec![s]).unwrap();
+    let table = MemTable::try_new(schema, vec![vec![batch]]).unwrap();
+    ctx.register_table("t", Arc::new(table)).unwrap();
+
+    // invalid in Rust regex (look-behind)
+    let df = ctx
+        .table("t")
+        .await
+        .unwrap()
+        .select(vec![
+            col("s"),
+            regexp_extract_udf_with(
+                RegexpExtractConfig::new().invalid_pattern_mode(InvalidPatternMode::EmptyString),
+            )
+            .call(vec![col("s"), lit("(?<=a)b"), lit(0)])
+            .alias("whole"),
+        ])
+        .unwrap();
+
+    let batches = df.collect().await.unwrap();
+    let out = batches[0]
+        .column(1)
+        .as_any()
+        .downcast_ref::<StringArray>()
+        .unwrap();
+    assert_eq!(out.value(0), "");
 }

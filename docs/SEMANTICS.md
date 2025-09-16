@@ -40,3 +40,7 @@
 **Errors**
 
 Errors are represented internally via a structured `RegexpExtractError` enum (e.g., `InvalidPattern`, `NegativeIndex`) and are mapped to `DataFusionError::Execution` at the UDF boundary.
+
+**Invalid pattern**
+
+With invalid_pattern_mode = EmptyString, an invalid regex pattern yields "" for the affected rows instead of an error; default mode is Error.

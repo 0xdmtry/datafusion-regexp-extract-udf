@@ -1,3 +1,4 @@
+use crate::config::InvalidPatternMode;
 use crate::error::RegexpExtractError;
 use crate::pattern_cache::PatternCache;
 use datafusion::arrow::array::{
@@ -96,6 +97,7 @@ fn run_generic<S, P>(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     cache_cap: usize,
+    mode: InvalidPatternMode,
 ) -> Result<ArrayRef, RegexpExtractError>
 where
     S: StrArray,
@@ -112,8 +114,9 @@ where
         _ => (false, 0),
     };
 
-    // Scalar pattern (length 1) → compile once
     let mut compiled_scalar: Option<Regex> = None;
+    let mut scalar_pat_invalid = false;
+
     let pat_scalar = patterns.len() == 1;
 
     for i in 0..n {
@@ -151,13 +154,37 @@ where
             return Err(RegexpExtractError::NegativeIndex(idx));
         }
 
-        let re = if pat_scalar {
+        let re: &Regex = if pat_scalar {
             if compiled_scalar.is_none() {
-                compiled_scalar = Some(Regex::new(patterns.value(0))?);
+                match Regex::new(patterns.value(0)) {
+                    Ok(re_comp) => compiled_scalar = Some(re_comp),
+                    Err(e) => {
+                        if let InvalidPatternMode::EmptyString = mode {
+                            // mark invalid; short-circuit rows to "" below
+                            scalar_pat_invalid = true;
+                        } else {
+                            return Err(e.into());
+                        }
+                    }
+                }
             }
-            compiled_scalar.as_ref().unwrap()
+            if scalar_pat_invalid {
+                b.append_value("");
+                continue;
+            }
+            compiled_scalar.as_ref().expect("compiled scalar regex")
         } else {
-            cache.get_or_compile(patterns.value(i))?
+            match cache.get_or_compile(patterns.value(i)) {
+                Ok(r) => r,
+                Err(e) => {
+                    if let InvalidPatternMode::EmptyString = mode {
+                        b.append_value("");
+                        continue;
+                    } else {
+                        return Err(e);
+                    }
+                }
+            }
         };
 
         let out: &str = if let Some(caps) = re.captures(s) {
@@ -187,8 +214,9 @@ pub fn run_utf8_utf8(
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
     cache_cap: usize,
+    mode: InvalidPatternMode,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap, mode)
 }
 
 /// LargeUtf8 strings with Utf8 patterns
@@ -199,8 +227,9 @@ pub fn run_large_utf8_utf8(
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
     cache_cap: usize,
+    mode: InvalidPatternMode,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap, mode)
 }
 
 /// Utf8 strings with LargeUtf8 patterns
@@ -211,8 +240,9 @@ pub fn run_utf8_largeutf8(
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
     cache_cap: usize,
+    mode: InvalidPatternMode,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap, mode)
 }
 
 /// LargeUtf8 strings with LargeUtf8 patterns
@@ -223,6 +253,7 @@ pub fn run_large_utf8_largeutf8(
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
     cache_cap: usize,
+    mode: InvalidPatternMode,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap, mode)
 }
