@@ -29,6 +29,7 @@ cargo bench --bench regexp_extract
 - Same as baseline (DataFusion 49.0.2; Rust 1.85; 20,000 rows; criterion)
 
 **Results**
+
 | Case                                      | Baseline Time (ms) | New Time (ms) | Time Δ        | Rows/s (baseline) | Rows/s (new) |
 |-------------------------------------------|--------------------:|--------------:|:--------------|------------------:|-------------:|
 | Utf8 / scalar pattern / scalar idx        | 2.74               | 2.3117        | −15.6%        | 7.30M            | 8.65M        |
@@ -55,3 +56,30 @@ cargo bench --bench regexp_extract -- --baseline v0_1_0
 # Optionally save new baseline
 cargo bench --bench regexp_extract -- --save-baseline fastpath_v1
 ``````
+
+
+## After per-batch LRU pattern cache
+
+**Change**
+- Replaced HashMap+clear eviction with a per-batch **LRU cache** (using `lru`) to avoid thrashing when pattern columns contain repeated values.
+
+**Environment**
+- Same as above (DataFusion 49.0.2; Rust 1.85; 20,000 rows; criterion)
+
+**Results (absolute times)**
+
+| Case                                      | Time (ms) | Rows/s      |
+|-------------------------------------------|----------:|------------:|
+| Utf8 / scalar pattern / scalar idx        | 2.3556    | 8.49M       |
+| Utf8 / column pattern (repeated) / scalar idx | 2.7625 | 7.24M       |
+| LargeUtf8 / scalar pattern / scalar idx   | 2.3426    | 8.54M       |
+
+
+**Criterion reported deltas vs previous baseline**
+- Utf8 scalar/scalar: **≈ +0.8% … +1.9%** (within noise)
+- Utf8 column(repeated)/scalar: **≈ −13.9%** (clear improvement)
+- LargeUtf8 scalar/scalar: **≈ −1.0% … +0.2%** (no material change)
+
+**Notes**
+- The LRU cache primarily benefits workloads with **pattern-as-column** and repeated values.
+- Scalar-pattern cases were already optimized via the scalar fast-path.
