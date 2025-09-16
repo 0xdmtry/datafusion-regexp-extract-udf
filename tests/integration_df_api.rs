@@ -7,8 +7,11 @@ use datafusion::datasource::MemTable;
 use datafusion::prelude::{SessionContext, col, lit};
 use datafusion::scalar::ScalarValue;
 
-use datafusion_regexp_extract_udf::{regexp_extract_udf, regexp_extract_udf_with};
+use datafusion_regexp_extract_udf::regexp_extract_udf;
 
+#[cfg(not(feature = "fancy-regex"))]
+use datafusion_regexp_extract_udf::regexp_extract_udf_with;
+#[cfg(not(feature = "fancy-regex"))]
 use datafusion_regexp_extract_udf::{InvalidPatternMode, RegexpExtractConfig};
 
 fn make_memtable(
@@ -283,6 +286,7 @@ async fn null_input_propagates() {
     assert!(out.is_null(1)); // NULL input -> NULL output
 }
 
+#[cfg(not(feature = "fancy-regex"))]
 #[tokio::test]
 async fn invalid_regex_errors() {
     let ctx = SessionContext::new();
@@ -312,6 +316,7 @@ async fn invalid_regex_errors() {
     assert!(msg.contains("invalid regex pattern"));
 }
 
+#[cfg(not(feature = "fancy-regex"))]
 #[tokio::test]
 async fn invalid_pattern_lenient_returns_empty_string() {
     let mut cfg = RegexpExtractConfig::new();

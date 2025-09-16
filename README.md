@@ -106,6 +106,10 @@ Example output:
 cargo test
 ```
 
+```bash
+cargo test --features fancy-regex -q 
+```
+
 Integration tests exercise:
 
 * Spark documentation examples
@@ -126,6 +130,8 @@ use datafusion_regexp_extract_udf::{regexp_extract_udf_with, RegexpExtractConfig
 
 let udf = regexp_extract_udf_with(RegexpExtractConfig::new().cache_size(128));
 ```
+
+`--features fancy-regex` enables look-around/backreferences (perf/footprint tradeoff)
 
 ### Sanity checklist
 

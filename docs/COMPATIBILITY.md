@@ -12,6 +12,8 @@
 - **Inline flags**: Both support inline flags such as `(?i)` (case-insensitive).
 - **Unicode**: Both support Unicode categories and boundaries, but class names and details may differ.
 
+Enabling `fancy-regex` narrows gaps with Java regex
+
 ## Practical guidance
 - Prefer patterns that avoid look-around and backreferences; rewrite with alternation, grouping, or simple captures.
 - To approximate a positive look-behind for fixed-width prefixes, capture the prefix and select the needed group via `idx`.

@@ -1,6 +1,6 @@
 use crate::error::RegexpExtractError;
+use crate::re::{Regex, compile};
 use lru::LruCache;
-use regex::Regex;
 use std::num::NonZeroUsize;
 
 pub struct PatternCache {
@@ -20,7 +20,7 @@ impl PatternCache {
         if self.lru.contains(pat) {
             return Ok(self.lru.get(pat).unwrap());
         }
-        let re = Regex::new(pat)?;
+        let re = compile(pat)?;
         self.lru.put(pat.to_string(), re);
         Ok(self.lru.get(pat).expect("entry just inserted"))
     }

@@ -6,6 +6,7 @@ pub mod error;
 pub mod eval;
 pub mod kernel;
 pub mod pattern_cache;
+pub mod re;
 pub mod types;
 pub mod udf;
 

@@ -1,12 +1,12 @@
 use crate::config::InvalidPatternMode;
 use crate::error::RegexpExtractError;
 use crate::pattern_cache::PatternCache;
+use crate::re::{Regex, captures, compile};
 use datafusion::arrow::array::{
     Array, ArrayRef, Int32Array, Int64Array, LargeStringArray, LargeStringBuilder, StringArray,
     StringBuilder,
 };
 use datafusion::arrow::datatypes::DataType;
-use regex::Regex;
 use std::sync::Arc;
 
 /// Minimal traits to unify Utf8 and LargeUtf8 arrays/builders without runtime dispatch.
@@ -156,11 +156,10 @@ where
 
         let re: &Regex = if pat_scalar {
             if compiled_scalar.is_none() {
-                match Regex::new(patterns.value(0)) {
+                match compile(patterns.value(0)) {
                     Ok(re_comp) => compiled_scalar = Some(re_comp),
                     Err(e) => {
                         if let InvalidPatternMode::EmptyString = mode {
-                            // mark invalid; short-circuit rows to "" below
                             scalar_pat_invalid = true;
                         } else {
                             return Err(e.into());
@@ -187,15 +186,23 @@ where
             }
         };
 
-        let out: &str = if let Some(caps) = re.captures(s) {
-            if idx == 0 {
-                caps.get(0).map(|m| m.as_str()).unwrap_or("")
-            } else {
-                let gi = idx as usize;
-                caps.get(gi).map(|m| m.as_str()).unwrap_or("")
+        let out: &str = match captures(re, s) {
+            Ok(Some(caps)) => {
+                if idx == 0 {
+                    caps.get(0).map(|m| m.as_str()).unwrap_or("")
+                } else {
+                    let gi = idx as usize;
+                    caps.get(gi).map(|m| m.as_str()).unwrap_or("")
+                }
             }
-        } else {
-            ""
+            Ok(None) => "",
+            Err(e) => {
+                if let InvalidPatternMode::EmptyString = mode {
+                    ""
+                } else {
+                    return Err(RegexpExtractError::MatchError(e.to_string()));
+                }
+            }
         };
 
         b.append_value(out);
