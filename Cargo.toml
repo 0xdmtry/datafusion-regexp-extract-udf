@@ -22,6 +22,7 @@ path = "src/lib.rs"
 default = []
 bench = []
 fancy-regex = ["dep:fancy-regex"]
+debug-logging = []
 
 [dependencies]
 datafusion = { version = "49.0.2", default-features = false }

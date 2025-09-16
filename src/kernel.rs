@@ -119,6 +119,127 @@ where
 
     let pat_scalar = patterns.len() == 1;
 
+    let str_no_nulls = strings.null_count() == 0;
+    let pat_no_nulls = if pat_scalar {
+        !patterns.is_null(0)
+    } else {
+        patterns.null_count() == 0
+    };
+    let idx_no_nulls = if idx_is_scalar {
+        match (idx_i64, idx_i32) {
+            (Some(i64s), None) => !i64s.is_null(0),
+            (None, Some(i32s)) => !i32s.is_null(0),
+            _ => false, // shouldn't happen
+        }
+    } else if let Some(i64s) = idx_i64 {
+        i64s.null_count() == 0
+    } else if let Some(i32s) = idx_i32 {
+        i32s.null_count() == 0
+    } else {
+        false
+    };
+
+    let use_no_nulls_fast_path = str_no_nulls && pat_no_nulls && idx_no_nulls;
+
+    if use_no_nulls_fast_path {
+        // compile scalar pattern once (or use cache for column patterns)
+        if pat_scalar && compiled_scalar.is_none() {
+            match compile(patterns.value(0)) {
+                Ok(re) => compiled_scalar = Some(re),
+                Err(e) => {
+                    if let InvalidPatternMode::EmptyString = mode {
+                        scalar_pat_invalid = true;
+                    } else {
+                        return Err(e.into());
+                    }
+                }
+            }
+        }
+
+        for i in 0..n {
+            // idx is guaranteed non-null here
+            let idx = if idx_is_scalar {
+                idx_scalar
+            } else if let Some(i64s) = idx_i64 {
+                i64s.value(i)
+            } else {
+                idx_i32.unwrap().value(i) as i64
+            };
+
+            if idx < 0 {
+                return Err(RegexpExtractError::NegativeIndex(idx));
+            }
+
+            // select regex
+            let re = if pat_scalar {
+                if scalar_pat_invalid {
+                    b.append_value("");
+                    continue;
+                }
+                compiled_scalar.as_ref().unwrap()
+            } else {
+                cache.get_or_compile(patterns.value(i))?
+            };
+
+            // match
+            let s = strings.value(i);
+            let out: &str = match captures(re, s) {
+                Ok(Some(caps)) => {
+                    if idx == 0 {
+                        caps.get(0).map(|m| m.as_str()).unwrap_or("")
+                    } else {
+                        caps.get(idx as usize).map(|m| m.as_str()).unwrap_or("")
+                    }
+                }
+                Ok(None) => "",
+                Err(e) => {
+                    if let InvalidPatternMode::EmptyString = mode {
+                        ""
+                    } else {
+                        return Err(RegexpExtractError::MatchError(e.to_string()));
+                    }
+                }
+            };
+
+            b.append_value(out);
+        }
+
+        #[cfg(feature = "debug-logging")]
+        {
+            let st = cache.stats();
+            eprintln!(
+                "regexp_extract: rows={} hits={} misses={} compiled={} hit_rate={:.1}%",
+                n,
+                st.hits,
+                st.misses,
+                st.compiled,
+                if st.hits + st.misses == 0 {
+                    100.0
+                } else {
+                    100.0 * (st.hits as f64) / ((st.hits + st.misses) as f64)
+                }
+            );
+        }
+
+        return Ok(b.finish_array());
+    }
+
+    if pat_scalar && compiled_scalar.is_none() {
+        match compile(patterns.value(0)) {
+            Ok(re) => {
+                compiled_scalar = Some(re);
+                scalar_pat_invalid = false;
+            }
+            Err(e) => {
+                if let InvalidPatternMode::EmptyString = mode {
+                    scalar_pat_invalid = true; // emit "" per row below
+                } else {
+                    return Err(e.into());
+                }
+            }
+        }
+    }
+
     for i in 0..n {
         let pat_is_null = if pat_scalar {
             patterns.is_null(0)
@@ -155,18 +276,6 @@ where
         }
 
         let re: &Regex = if pat_scalar {
-            if compiled_scalar.is_none() {
-                match compile(patterns.value(0)) {
-                    Ok(re_comp) => compiled_scalar = Some(re_comp),
-                    Err(e) => {
-                        if let InvalidPatternMode::EmptyString = mode {
-                            scalar_pat_invalid = true;
-                        } else {
-                            return Err(e.into());
-                        }
-                    }
-                }
-            }
             if scalar_pat_invalid {
                 b.append_value("");
                 continue;

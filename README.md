@@ -158,6 +158,14 @@ cargo test -q
  ```
 
 ```bash
+cargo test --features debug-logging -- --nocapture
+```
+
+```bash
+cargo test --features fancy-regex -q 
+```
+
+```bash
 cargo bench --bench regexp_extract
 ```
 
@@ -167,6 +175,10 @@ cargo run --example ping
 
 ```bash 
 cargo run --example df_api
+```
+
+```bash
+cargo run --example df_api --features debug-logging
 ```
 
 ## Future improvements
