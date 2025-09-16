@@ -147,6 +147,41 @@ cargo run --example ping
 ```bash 
 cargo run --example df_api
 ```
+
+## Future improvements
+
+- **Custom internal error type + UDF mapping**  
+  Structured variants (e.g., `InvalidPattern`, `NegativeIndex`) internally; mapped to `DataFusionError` at the boundary for consistent external behavior.
+- **Configurable behavior for invalid patterns**  
+  Optional mode to return `""` on pattern compilation failure instead of error, to mimic certain Spark workflows.
+- **Optional alternative regex engine**  
+  Feature-flag `fancy-regex` for look-around/backreferences; default remains `regex` for performance and footprint.
+- **Lightweight observability**  
+  Counters for cache hits/misses and compile counts; optional debug logging to aid tuning.
+- **User-facing builder for tuning**  
+  Knobs for `cache_size`, `invalid_pattern_mode`, `engine` (regex/fancy), and compatibility warnings.
+
+---
+
+- **Vectorized NULL iteration**  
+  Iterate validity bitmaps to reduce per-row `is_null()` checks on large batches.
+- **Better builder sizing**  
+  Heuristics to pre-estimate output bytes (beyond `n*4`) to lower reallocations for long outputs.
+- **Global LRU across batches (guarded)**  
+  Small shared LRU behind a lock to reuse stable patterns across batches; enable only if profiling shows regex compile cost dominates.
+
+---
+
+- **Property-based / fuzz testing**  
+  Broaden input coverage (random patterns/inputs) to harden behavior under edge cases.
+- **Spark-compat suite (optional)**  
+  Cross-check selected patterns against a Spark runner to track engine-difference impacts.
+- **Benchmark scenarios**  
+  Add cases for mixed-match rates and highly nested alternations; include long-string Unicode workloads.
+- **Documentation**  
+  Expand compatibility notes with Java↔Rust regex migration tips and pattern rewrite examples.
+
+
 ## Documentation
 
 - [Semantics](docs/SEMANTICS.md)
