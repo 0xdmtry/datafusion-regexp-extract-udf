@@ -126,12 +126,35 @@ cargo run --example df_api
 ## Configuration
 
 ```text
-use datafusion_regexp_extract_udf::{regexp_extract_udf_with, RegexpExtractConfig};
+use datafusion_regexp_extract_udf::{
+    regexp_extract_udf_with, RegexpExtractConfig, InvalidPatternMode,
+};
 
-let udf = regexp_extract_udf_with(RegexpExtractConfig::new().cache_size(128));
+let cfg = RegexpExtractConfig::new()
+    .cache_size(128)
+    .invalid_pattern_mode(InvalidPatternMode::EmptyString);
+
+let udf = regexp_extract_udf_with(cfg);
 ```
+## Feature flags
 
-`--features fancy-regex` enables look-around/backreferences (perf/footprint tradeoff)
+- `fancy-regex` — enables look-around/backreferences via `fancy-regex`
+  (higher cost; keep off unless needed).
+- `debug-logging` — prints per-batch cache stats (hits/misses/compiled) to **stderr**.
+  In tests, use `-- --nocapture` to see the output.
+
+Examples:
+```bash
+# Tests
+cargo test --features fancy-regex
+cargo test --features debug-logging -- --nocapture
+
+# Run example with logging
+cargo run --features debug-logging --example df_api
+
+# Run example with both flags
+cargo run --features "fancy-regex debug-logging" --example df_api
+```
 
 ### Sanity checklist
 
