@@ -146,7 +146,14 @@ cargo run --example ping
 ```bash 
 cargo run --example df_api
 ```
+## Documentation
+
+- [Semantics](docs/SEMANTICS.md)
+- [Compatibility (Spark ↔︎ Rust regex)](docs/COMPATIBILITY.md)
+- [Performance](docs/PERFORMANCE.md)
+- [Changelog](CHANGELOG.md)
+- Example source: [`examples/df_api.rs`](examples/df_api.rs)
 
 ## License
 
-Apache-2.0.
+[Apache-2.0](LICENSE)
