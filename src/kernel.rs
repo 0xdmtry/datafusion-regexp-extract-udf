@@ -31,7 +31,12 @@ pub fn run_utf8_utf8(
     let pat_scalar = patterns.len() == 1;
 
     for i in 0..n {
-        if strings.is_null(i) || patterns.is_null(i) {
+        let pat_is_null = if pat_scalar {
+            patterns.is_null(0)
+        } else {
+            patterns.is_null(i)
+        };
+        if strings.is_null(i) || pat_is_null {
             b.append_null();
             continue;
         }
@@ -77,16 +82,15 @@ pub fn run_utf8_utf8(
             })?
         };
 
-        let out = if let Some(caps) = re.captures(s) {
-            // idx==0 -> whole match
+        let out: &str = if let Some(caps) = re.captures(s) {
             if idx == 0 {
-                caps.get(0).map(|m| m.as_str()).unwrap_or("").to_string()
+                caps.get(0).map(|m| m.as_str()).unwrap_or("")
             } else {
-                let i = idx as usize;
-                caps.get(i).map(|m| m.as_str()).unwrap_or("").to_string()
+                let gi = idx as usize;
+                caps.get(gi).map(|m| m.as_str()).unwrap_or("")
             }
         } else {
-            "".to_string()
+            ""
         };
 
         b.append_value(out);
@@ -117,7 +121,12 @@ pub fn run_large_utf8_utf8(
     let pat_scalar = patterns.len() == 1;
 
     for i in 0..n {
-        if strings.is_null(i) || patterns.is_null(i) {
+        let pat_is_null = if pat_scalar {
+            patterns.is_null(0)
+        } else {
+            patterns.is_null(i)
+        };
+        if strings.is_null(i) || pat_is_null {
             b.append_null();
             continue;
         }
@@ -163,17 +172,16 @@ pub fn run_large_utf8_utf8(
             })?
         };
 
-        let out = if let Some(caps) = re.captures(s) {
+        let out: &str = if let Some(caps) = re.captures(s) {
             if idx == 0 {
-                caps.get(0).map(|m| m.as_str()).unwrap_or("").to_string()
+                caps.get(0).map(|m| m.as_str()).unwrap_or("")
             } else {
-                let i = idx as usize;
-                caps.get(i).map(|m| m.as_str()).unwrap_or("").to_string()
+                let gi = idx as usize;
+                caps.get(gi).map(|m| m.as_str()).unwrap_or("")
             }
         } else {
-            "".to_string()
+            ""
         };
-
         b.append_value(out);
     }
 
@@ -203,7 +211,12 @@ pub fn run_utf8_largeutf8(
     let pat_scalar = patterns.len() == 1;
 
     for i in 0..n {
-        if strings.is_null(i) || patterns.is_null(i) {
+        let pat_is_null = if pat_scalar {
+            patterns.is_null(0)
+        } else {
+            patterns.is_null(i)
+        };
+        if strings.is_null(i) || pat_is_null {
             b.append_null();
             continue;
         }
@@ -250,17 +263,16 @@ pub fn run_utf8_largeutf8(
             })?
         };
 
-        let out = if let Some(caps) = re.captures(s) {
+        let out: &str = if let Some(caps) = re.captures(s) {
             if idx == 0 {
-                caps.get(0).map(|m| m.as_str()).unwrap_or("").to_string()
+                caps.get(0).map(|m| m.as_str()).unwrap_or("")
             } else {
                 let gi = idx as usize;
-                caps.get(gi).map(|m| m.as_str()).unwrap_or("").to_string()
+                caps.get(gi).map(|m| m.as_str()).unwrap_or("")
             }
         } else {
-            "".to_string()
+            ""
         };
-
         b.append_value(out);
     }
 
@@ -289,7 +301,12 @@ pub fn run_large_utf8_largeutf8(
     let pat_scalar = patterns.len() == 1;
 
     for i in 0..n {
-        if strings.is_null(i) || patterns.is_null(i) {
+        let pat_is_null = if pat_scalar {
+            patterns.is_null(0)
+        } else {
+            patterns.is_null(i)
+        };
+        if strings.is_null(i) || pat_is_null {
             b.append_null();
             continue;
         }
@@ -336,17 +353,16 @@ pub fn run_large_utf8_largeutf8(
             })?
         };
 
-        let out = if let Some(caps) = re.captures(s) {
+        let out: &str = if let Some(caps) = re.captures(s) {
             if idx == 0 {
-                caps.get(0).map(|m| m.as_str()).unwrap_or("").to_string()
+                caps.get(0).map(|m| m.as_str()).unwrap_or("")
             } else {
                 let gi = idx as usize;
-                caps.get(gi).map(|m| m.as_str()).unwrap_or("").to_string()
+                caps.get(gi).map(|m| m.as_str()).unwrap_or("")
             }
         } else {
-            "".to_string()
+            ""
         };
-
         b.append_value(out);
     }
 

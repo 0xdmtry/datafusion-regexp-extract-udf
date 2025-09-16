@@ -20,8 +20,15 @@ pub fn evaluate_regexp_extract(args: ScalarFunctionArgs) -> Result<ColumnarValue
 
     // Materialize to arrays (handles scalars by expanding to length `rows`)
     let s_arr = to_array(&a[0], rows)?;
-    let p_arr = to_array(&a[1], rows)?;
-    let i_arr = to_array(&a[2], rows)?;
+
+    let p_arr = match &a[1] {
+        ColumnarValue::Scalar(sv) => sv.to_array()?,
+        _ => to_array(&a[1], rows)?,
+    };
+    let i_arr = match &a[2] {
+        ColumnarValue::Scalar(sv) => sv.to_array()?,
+        _ => to_array(&a[2], rows)?,
+    };
 
     // Determine output width from first arg
     let out_dt = s_arr.data_type().clone();
