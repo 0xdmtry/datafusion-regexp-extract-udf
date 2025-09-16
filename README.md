@@ -117,6 +117,36 @@ Run the example:
 cargo run --example df_api
 ```
 
+## Additional commands
+
+```bash
+cargo check
+```
+
+```bash
+cargo fmt -- --check
+```
+
+```bash 
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+ ```bash
+cargo test -q
+ ```
+
+```bash
+cargo bench --bench regexp_extract
+```
+
+```bash
+cargo run --example ping
+ ```
+
+```bash 
+cargo run --example df_api
+```
+
 ## License
 
 Apache-2.0.
