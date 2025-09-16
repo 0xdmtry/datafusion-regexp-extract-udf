@@ -14,6 +14,10 @@ Three micro-benchmarks over short strings:
 2. **Utf8 / column pattern (repeated value) / scalar idx**
 3. **LargeUtf8 / scalar pattern / scalar idx**
 
+**Cache size rationale**
+- Default per-batch cache size is 64 entries. Typical analytical queries use a small set of repeated patterns (dozens, not thousands) per batch; 64 balances hit rate and memory.
+- Tune this constant if workloads show either (a) many distinct patterns per batch or (b) very stable patterns across batches.
+
 Command:
 ```bash
 cargo bench --bench regexp_extract
@@ -83,3 +87,32 @@ cargo bench --bench regexp_extract -- --save-baseline fastpath_v1
 **Notes**
 - The LRU cache primarily benefits workloads with **pattern-as-column** and repeated values.
 - Scalar-pattern cases were already optimized via the scalar fast-path.
+
+
+## Benchmark matrix expansion
+
+**Setup**
+- Same environment and row count (20,000) as above.
+
+**Results (median)**
+
+| Case                                          | Time (ms) | Rows/s   |
+|-----------------------------------------------|----------:|---------:|
+| Utf8 / scalar pattern / scalar idx            | 2.2976    | 8.70M    |
+| Utf8 / column pattern (repeated) / scalar idx | 2.7140    | 7.37M    |
+| LargeUtf8 / scalar pattern / scalar idx       | 2.3671    | 8.46M    |
+| Utf8 / unique pattern per row / scalar idx    | 235.15    | 0.085M   |
+| Utf8 / long strings 10/10 / scalar pat+idx    | 2.0106    | 9.95M    |
+| Utf8 / long strings 100/100 / scalar pat+idx  | 5.1552    | 3.88M    |
+| Utf8 / long strings 1000/1000 / scalar pat+idx| 37.309    | 0.54M    |
+| Utf8 / no-match / scalar pat+idx              | 0.9757    | 20.5M    |
+| Utf8 / heavy alternation / scalar pat+idx     | 3.9616    | 5.05M    |
+
+**Interpretation**
+- **Repeated-column patterns** benefit from the per-batch **LRU cache** (see earlier section).
+- **Unique pattern per row** is the **worst case** (regex compiled per row); this validates correctness under cache-miss workloads.
+- **Longer strings** scale roughly with input length (as expected).
+- **No-match** can be faster than “match” due to early failure in the regex engine.
+- **Heavy alternation** stresses the engine more than simple digit captures.
+
+> Note: Criterion warned that “unique pattern per row” needs a longer target time; results are still representative for relative comparisons.

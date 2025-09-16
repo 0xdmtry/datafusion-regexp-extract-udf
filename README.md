@@ -29,6 +29,7 @@ datafusion-regexp-extract-udf = { version = "0.1.0", path = "." } # replace path
 * Vectorized over Arrow arrays
 * Deterministic / immutable UDF
 * Per-batch compiled-pattern cache
+* Return width follows `str` (`Utf8` → `Utf8`, `LargeUtf8` → `LargeUtf8`).
 
 ## Semantics (aligned with Spark)
 

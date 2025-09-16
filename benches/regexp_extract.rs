@@ -82,10 +82,114 @@ fn bench_largeutf8_scalar_pattern(c: &mut Criterion) {
     });
 }
 
+fn bench_utf8_unique_patterns_miss(c: &mut Criterion) {
+    let n = 20_000;
+    let strings = StringArray::from((0..n).map(|i| Some(format!("x{i}"))).collect::<Vec<_>>());
+    let strings_ref = &strings;
+    // Unique pattern per row: "(x0)", "(x1)", ...
+    let patterns = StringArray::from((0..n).map(|i| Some(format!(r"(x{i})"))).collect::<Vec<_>>());
+    let idx = Int32Array::from(vec![Some(0)]); // scalar idx via len=1
+    c.bench_function("utf8 / unique pattern per row / scalar idx", |b| {
+        b.iter(|| {
+            let out = run_utf8_utf8(
+                black_box(strings_ref),
+                black_box(&patterns),
+                None,
+                Some(&idx),
+                &DataType::Utf8,
+            )
+            .unwrap();
+            black_box(out);
+        });
+    });
+}
+
+fn bench_utf8_long_strings(c: &mut Criterion) {
+    let mk = |a: usize, b: usize| -> String {
+        let mut s = String::with_capacity(a + 3 + b);
+        s.push_str(&"a".repeat(a));
+        s.push_str("123");
+        s.push_str(&"b".repeat(b));
+        s
+    };
+    for (al, bl, label) in [
+        (10, 10, "10/10"),
+        (100, 100, "100/100"),
+        (1000, 1000, "1000/1000"),
+    ] {
+        let n = 20_000;
+        let strings = StringArray::from(vec![Some(mk(al, bl)); n]);
+        let strings_ref = &strings;
+        let pat = StringArray::from(vec![Some(r"(\d+)")]); // scalar pattern
+        let idx = Int32Array::from(vec![Some(1)]);
+        let name = format!("utf8 / long strings {label} / scalar pat+idx");
+        c.bench_function(&name, |b| {
+            b.iter(|| {
+                let out = run_utf8_utf8(
+                    black_box(strings_ref),
+                    black_box(&pat),
+                    None,
+                    Some(&idx),
+                    &DataType::Utf8,
+                )
+                .unwrap();
+                black_box(out);
+            });
+        });
+    }
+}
+
+fn bench_utf8_no_match(c: &mut Criterion) {
+    let n = 20_000;
+    let strings = StringArray::from(vec![Some("abcdef"); n]);
+    let strings_ref = &strings;
+    let pat = StringArray::from(vec![Some(r"(\d+)")]); // never matches
+    let idx = Int32Array::from(vec![Some(1)]);
+    c.bench_function("utf8 / no-match / scalar pat+idx", |b| {
+        b.iter(|| {
+            let out = run_utf8_utf8(
+                black_box(strings_ref),
+                black_box(&pat),
+                None,
+                Some(&idx),
+                &DataType::Utf8,
+            )
+            .unwrap();
+            black_box(out);
+        });
+    });
+}
+
+fn bench_utf8_heavy_alternation(c: &mut Criterion) {
+    let n = 20_000;
+    let strings = StringArray::from(vec![Some("abc123xyz"); n]);
+    let strings_ref = &strings;
+    // somewhat heavier pattern than digits only
+    let pat = StringArray::from(vec![Some(r"([A-Za-z]+|[0-9]+){3}")]);
+    let idx = Int32Array::from(vec![Some(0)]);
+    c.bench_function("utf8 / heavy alternation / scalar pat+idx", |b| {
+        b.iter(|| {
+            let out = run_utf8_utf8(
+                black_box(strings_ref),
+                black_box(&pat),
+                None,
+                Some(&idx),
+                &DataType::Utf8,
+            )
+            .unwrap();
+            black_box(out);
+        });
+    });
+}
+
 criterion_group!(
     benches,
     bench_utf8_scalar_pattern,
     bench_utf8_column_pattern_repeated,
-    bench_largeutf8_scalar_pattern
+    bench_largeutf8_scalar_pattern,
+    bench_utf8_unique_patterns_miss,
+    bench_utf8_long_strings,
+    bench_utf8_no_match,
+    bench_utf8_heavy_alternation
 );
 criterion_main!(benches);
