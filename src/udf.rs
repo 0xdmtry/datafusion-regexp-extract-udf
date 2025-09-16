@@ -1,15 +1,20 @@
 //! UDF construction: logical surface only
 
+use crate::config::RegexpExtractConfig;
+use crate::eval::evaluate_regexp_extract_with;
 use datafusion::arrow::datatypes::DataType;
 use datafusion::common::{DataFusionError, Result};
 use datafusion::logical_expr::{
     ColumnarValue, ScalarFunctionArgs, ScalarUDF, ScalarUDFImpl, Signature, TypeSignature,
     Volatility,
 };
-
 use std::any::Any;
+use std::sync::Arc;
 
-/// Public factory: returns the logical UDF handle users will call from the Expr/DataFrame API
+pub fn regexp_extract_udf_with(cfg: RegexpExtractConfig) -> ScalarUDF {
+    ScalarUDF::from(RegexpExtractUdf::new_with(cfg))
+}
+
 pub fn regexp_extract_udf() -> ScalarUDF {
     ScalarUDF::from(RegexpExtractUdf::new())
 }
@@ -18,10 +23,14 @@ pub fn regexp_extract_udf() -> ScalarUDF {
 #[derive(Debug)]
 struct RegexpExtractUdf {
     signature: Signature,
+    cfg: Arc<RegexpExtractConfig>,
 }
 
 impl RegexpExtractUdf {
     fn new() -> Self {
+        Self::new_with(RegexpExtractConfig::default())
+    }
+    fn new_with(cfg: RegexpExtractConfig) -> Self {
         // Accept (Utf8|LargeUtf8, Utf8|LargeUtf8, Int32|Int64)
         let combos = [
             (DataType::Utf8, DataType::Utf8, DataType::Int32),
@@ -42,7 +51,10 @@ impl RegexpExtractUdf {
             Volatility::Immutable,
         );
 
-        Self { signature: sig }
+        Self {
+            signature: sig,
+            cfg: Arc::new(cfg),
+        }
     }
 }
 
@@ -70,7 +82,7 @@ impl ScalarUDFImpl for RegexpExtractUdf {
     }
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
-        crate::eval::evaluate_regexp_extract(args)
+        evaluate_regexp_extract_with(args, self.cfg.as_ref())
     }
 }
 

@@ -25,6 +25,7 @@ fn bench_utf8_scalar_pattern(c: &mut Criterion) {
                 None,
                 Some(&idx_scalar),
                 &DataType::Utf8,
+                64,
             )
             .unwrap();
             black_box(out);
@@ -50,6 +51,7 @@ fn bench_utf8_column_pattern_repeated(c: &mut Criterion) {
                 None,
                 Some(&idx_scalar),
                 &DataType::Utf8,
+                64,
             )
             .unwrap();
             black_box(out);
@@ -75,6 +77,7 @@ fn bench_largeutf8_scalar_pattern(c: &mut Criterion) {
                 None,
                 Some(&idx_scalar),
                 &DataType::LargeUtf8,
+                64,
             )
             .unwrap();
             black_box(out);
@@ -97,6 +100,7 @@ fn bench_utf8_unique_patterns_miss(c: &mut Criterion) {
                 None,
                 Some(&idx),
                 &DataType::Utf8,
+                64,
             )
             .unwrap();
             black_box(out);
@@ -131,6 +135,7 @@ fn bench_utf8_long_strings(c: &mut Criterion) {
                     None,
                     Some(&idx),
                     &DataType::Utf8,
+                    64,
                 )
                 .unwrap();
                 black_box(out);
@@ -153,6 +158,7 @@ fn bench_utf8_no_match(c: &mut Criterion) {
                 None,
                 Some(&idx),
                 &DataType::Utf8,
+                64,
             )
             .unwrap();
             black_box(out);
@@ -175,6 +181,7 @@ fn bench_utf8_heavy_alternation(c: &mut Criterion) {
                 None,
                 Some(&idx),
                 &DataType::Utf8,
+                64,
             )
             .unwrap();
             black_box(out);

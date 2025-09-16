@@ -95,6 +95,7 @@ fn run_generic<S, P>(
     patterns: &P,
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
+    cache_cap: usize,
 ) -> Result<ArrayRef, RegexpExtractError>
 where
     S: StrArray,
@@ -102,7 +103,7 @@ where
 {
     let n = strings.len();
     let mut b = S::builder_with_capacity(n, n * 4);
-    let mut cache = PatternCache::new(32);
+    let mut cache = PatternCache::new(cache_cap);
 
     // Detect scalar idx once
     let (idx_is_scalar, idx_scalar) = match (idx_i64, idx_i32) {
@@ -185,8 +186,9 @@ pub fn run_utf8_utf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
+    cache_cap: usize,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
 }
 
 /// LargeUtf8 strings with Utf8 patterns
@@ -196,8 +198,9 @@ pub fn run_large_utf8_utf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
+    cache_cap: usize,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
 }
 
 /// Utf8 strings with LargeUtf8 patterns
@@ -207,8 +210,9 @@ pub fn run_utf8_largeutf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
+    cache_cap: usize,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
 }
 
 /// LargeUtf8 strings with LargeUtf8 patterns
@@ -218,6 +222,7 @@ pub fn run_large_utf8_largeutf8(
     idx_i64: Option<&Int64Array>,
     idx_i32: Option<&Int32Array>,
     _out_dt: &DataType,
+    cache_cap: usize,
 ) -> Result<ArrayRef, RegexpExtractError> {
-    run_generic(strings, patterns, idx_i64, idx_i32)
+    run_generic(strings, patterns, idx_i64, idx_i32, cache_cap)
 }

@@ -40,6 +40,7 @@ datafusion-regexp-extract-udf = { version = "0.1.0", path = "." } # replace path
 * Negative `idx` → error
 * Invalid regex pattern → error with diagnostic
 
+
 ## Usage (Expr/DataFrame API; no SQL)
 
 ```rust
@@ -117,6 +118,20 @@ Run the example:
 ```bash
 cargo run --example df_api
 ```
+
+## Configuration
+
+```text
+use datafusion_regexp_extract_udf::{regexp_extract_udf_with, RegexpExtractConfig};
+
+let udf = regexp_extract_udf_with(RegexpExtractConfig::new().cache_size(128));
+```
+
+### Sanity checklist
+
+- Defaults unchanged: `regexp_extract_udf()` still works as before.
+- Configured path: `regexp_extract_udf_with(cfg)` captures and threads `cache_size` into the kernels.
+- Tests & clippy should pass after updating benches (if they call kernels directly).
 
 ## Additional commands
 
