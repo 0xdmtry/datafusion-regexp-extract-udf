@@ -1,26 +1,26 @@
+use lru::LruCache;
 use regex::Regex;
-use std::collections::HashMap;
+use std::num::NonZeroUsize;
 
 pub struct PatternCache {
-    map: HashMap<String, Regex>,
-    cap: usize,
+    lru: LruCache<String, Regex>,
 }
 
 impl PatternCache {
     pub fn new(cap: usize) -> Self {
+        // LruCache requires NonZeroUsize; clamp 0 to 1
+        let cap_nz = NonZeroUsize::new(cap.max(1)).unwrap();
         Self {
-            map: HashMap::new(),
-            cap,
+            lru: LruCache::new(cap_nz),
         }
     }
 
     pub fn get_or_compile(&mut self, pat: &str) -> Result<&Regex, regex::Error> {
-        if self.map.len() >= self.cap && !self.map.contains_key(pat) {
-            self.map.clear();
+        if self.lru.contains(pat) {
+            return Ok(self.lru.get(pat).unwrap());
         }
-        if !self.map.contains_key(pat) {
-            self.map.insert(pat.to_string(), Regex::new(pat)?);
-        }
-        Ok(self.map.get(pat).unwrap())
+        let re = Regex::new(pat)?;
+        self.lru.put(pat.to_string(), re);
+        Ok(self.lru.get(pat).expect("entry just inserted"))
     }
 }
