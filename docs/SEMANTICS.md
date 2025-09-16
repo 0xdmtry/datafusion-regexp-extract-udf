@@ -22,18 +22,17 @@
 - If the regex **does not match** the input string → `""`.
 - If the specified **group exists but did not match** (e.g., optional group) → `""`.
 
-**Invalid pattern**
-- Invalid regex pattern → error with a diagnostic from the regex engine.
-
 **Types**
 - `str`: `Utf8` or `LargeUtf8`
 - `pattern`: `Utf8` or `LargeUtf8` (scalar or column)
 - `idx`: `Int32` or `Int64` (scalar or column)
 
 **Unicode**
+
 - Uses Rust `regex` with Unicode support; group boundaries respect UTF-8.
 
 **Performance notes**
+
 - Compiles a scalar `pattern` once per batch.
 - For `pattern` as a column, uses a small per-batch cache to avoid repeated compilations.
 
@@ -41,6 +40,14 @@
 
 Errors are represented internally via a structured `RegexpExtractError` enum (e.g., `InvalidPattern`, `NegativeIndex`) and are mapped to `DataFusionError::Execution` at the UDF boundary.
 
-**Invalid pattern**
 
-With invalid_pattern_mode = EmptyString, an invalid regex pattern yields "" for the affected rows instead of an error; default mode is Error.
+**Invalid pattern & engine behavior**
+
+- **Default (mode = `Error`)**: a syntactically invalid pattern results in an error (`DataFusionError::Execution`) for the batch.
+- **Optional (mode = `EmptyString`)**: invalid patterns yield `""` for affected rows; processing continues.
+- With the **`fancy-regex`** feature, look-around/backreferences are supported; compilation or match-time errors are still surfaced/handled according to the selected mode.
+
+
+  **Unicode**
+
+- Uses a Unicode-aware engine; capture groups operate on UTF-8 codepoint boundaries (results are substrings, not byte ranges).
