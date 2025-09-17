@@ -104,15 +104,17 @@ where
     P: StrArray,
 {
     let n = strings.len();
-    let mut b = S::builder_with_capacity(n, n * 4);
-    let mut cache = PatternCache::new(cache_cap);
 
-    // Detect scalar idx once
+    // Detect scalar idx once (moved above estimate_bytes)
     let (idx_is_scalar, idx_scalar) = match (idx_i64, idx_i32) {
         (Some(i64s), None) if i64s.len() == 1 => (true, i64s.value(0)),
         (None, Some(i32s)) if i32s.len() == 1 => (true, i32s.value(0) as i64),
         _ => (false, 0),
     };
+
+    let bytes_hint = estimate_bytes(strings, idx_i64, idx_i32, idx_is_scalar, idx_scalar);
+    let mut b = S::builder_with_capacity(n, bytes_hint);
+    let mut cache = PatternCache::new(cache_cap);
 
     let mut compiled_scalar: Option<Regex> = None;
     let mut scalar_pat_invalid = false;
@@ -372,4 +374,48 @@ pub fn run_large_utf8_largeutf8(
     mode: InvalidPatternMode,
 ) -> Result<ArrayRef, RegexpExtractError> {
     run_generic(strings, patterns, idx_i64, idx_i32, cache_cap, mode)
+}
+
+#[inline]
+fn estimate_bytes<S: StrArray>(
+    strings: &S,
+    idx_i64: Option<&Int64Array>,
+    idx_i32: Option<&Int32Array>,
+    idx_is_scalar: bool,
+    idx_scalar: i64,
+) -> usize {
+    let n = strings.len();
+
+    // Base lower bound (what we used before).
+    let mut bytes = n.saturating_mul(4);
+
+    let mut sum_input = 0usize;
+    for i in 0..n {
+        if strings.is_null(i) {
+            continue;
+        }
+        if !idx_is_scalar {
+            if let Some(i64s) = idx_i64 {
+                if i64s.is_null(i) {
+                    continue;
+                }
+            }
+            if let Some(i32s) = idx_i32 {
+                if i32s.is_null(i) {
+                    continue;
+                }
+            }
+        }
+        sum_input = sum_input.saturating_add(strings.value(i).len());
+    }
+
+    let group_factor = if idx_is_scalar && idx_scalar == 0 {
+        1.0
+    } else {
+        0.25
+    };
+    let est = (sum_input as f64 * group_factor) as usize;
+
+    bytes = bytes.max(est);
+    bytes
 }
